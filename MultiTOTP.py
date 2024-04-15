@@ -25,7 +25,7 @@ def read_secrets(file_path):
         logging.debug(f"Secrets file doesn't exist")
         sys.exit(1)
     except Exception as e:
-        logging.debug(f"An error occurred: {e}")
+        logging.error(f"An error occurred: {e}")
         sys.exit(1)
 
 def write_secret(file_path, name, secret):
@@ -65,6 +65,7 @@ class TOTPGeneratorApp:
     def __init__(self, master, entries):
         self.master = master
         self.file_path = 'C:\\ProgramData\\MFATool\\secrets.csv'
+        enable_add_button = 'C:\\ProgramData\\MFATool\\AddKeysEnabled.txt'
         logging.debug(f'TOPGenerator Entries: {entries}')
         self.entries = entries
         #master.title("MFA Code Generator")
@@ -80,8 +81,20 @@ class TOTPGeneratorApp:
 
         # Button to open add entry window
         #removing this for the VB365 build - No need for end user modification here.
-        #add_button = ttk.Button(master, text="Add New Entry", command=self.open_add_entry_window)
-        #add_button.pack(pady=10)
+        try:
+            with open(enable_add_button, 'r') as file:
+                is_add_button_enabled = file.read().strip()
+
+            if is_add_button_enabled == "True":    
+                add_button = ttk.Button(master, text="Add New Entry", command=self.open_add_entry_window)
+                add_button.pack(pady=10)
+                logging.debug(f'Add Button is enabled. String = {is_add_button_enabled}')
+            else:
+                logging.debug(f'Add Button not enabled. String = {is_add_button_enabled}')
+        except FileNotFoundError:
+            logging.debug("Enable add button file not found.")
+        except Exception as e:
+            logging.error(f"Error reading the enable add button file: {str(e)}")
 
     def build_totp_widgets(self):
 
@@ -140,7 +153,7 @@ if __name__ == "__main__":
 
 
 
-    secrets_file_path = os.path.join(base_path, 'C:\\ProgramData\\MFATool\\', 'secrets.csv')
+    secrets_file_path = os.path.join(base_path, 'secrets.csv')
     entries = read_secrets(secrets_file_path)
     root = tk.Tk()
     root.title("MFA Code Generator")
